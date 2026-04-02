@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "801762750730",
+    "project_id": "legalhub-app",
+    "storage_bucket": "legalhub-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801762750730:android:9eede1e084da14ae638af3",
+        "android_client_info": {
+          "package_name": "com.example.legal_hub_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "801762750730-uhlf7g3qpnekpl97ecmf5ml3ldntv0k4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.legal_hub_app",
+            "certificate_hash": "1ce5529da9775e1afac18c33d5df13fa572bea56"
+          }
+        },
+        {
+          "client_id": "801762750730-ppi0dhllo003bos37q749ceviies7bgm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpGQ4hnPRPWibKeQe2yC3ZEK0F1LQT96c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "801762750730-ppi0dhllo003bos37q749ceviies7bgm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
