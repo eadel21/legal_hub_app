@@ -1,42 +1,77 @@
 {
   "project_info": {
-    "project_number": "801762750730",
-    "project_id": "legalhub-app",
-    "storage_bucket": "legalhub-app.firebasestorage.app"
+    "project_number": "835639496992",
+    "project_id": "legalhub-bfbf3",
+    "storage_bucket": "legalhub-bfbf3.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:801762750730:android:9eede1e084da14ae638af3",
+        "mobilesdk_app_id": "1:835639496992:android:aae722e203189493ef4745",
         "android_client_info": {
-          "package_name": "com.example.legal_hub_app"
+          "package_name": "com.example.legal_hub"
         }
       },
       "oauth_client": [
         {
-          "client_id": "801762750730-uhlf7g3qpnekpl97ecmf5ml3ldntv0k4.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.legal_hub_app",
-            "certificate_hash": "1ce5529da9775e1afac18c33d5df13fa572bea56"
-          }
-        },
-        {
-          "client_id": "801762750730-ppi0dhllo003bos37q749ceviies7bgm.apps.googleusercontent.com",
+          "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBpGQ4hnPRPWibKeQe2yC3ZEK0F1LQT96c"
+          "current_key": "AIzaSyD3iX-g40aS8aaCYM4t8T_SQbjhvqq6ZF8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "801762750730-ppi0dhllo003bos37q749ceviies7bgm.apps.googleusercontent.com",
+              "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "835639496992-8jeo4hv2m86d8391nuht128mi8i101hr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.legalHubApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835639496992:android:3dfe1a461ae942cdef4745",
+        "android_client_info": {
+          "package_name": "com.example.legal_hub_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3iX-g40aS8aaCYM4t8T_SQbjhvqq6ZF8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "835639496992-8jeo4hv2m86d8391nuht128mi8i101hr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.legalHubApp"
+              }
             }
           ]
         }

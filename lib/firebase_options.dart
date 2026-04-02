@@ -87,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'legalhub-bfbf3.firebasestorage.app',
     measurementId: 'G-D6VLZ8ZF97',
   );
+
 }
