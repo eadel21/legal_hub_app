@@ -43,18 +43,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showError(String msg) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   Widget _field(String label, TextEditingController ctrl,
-      {bool obscure = false,
-      TextInputType type = TextInputType.text}) {
+      {bool obscure = false, TextInputType type = TextInputType.text}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
         const SizedBox(height: 8),
         TextField(
           controller: ctrl,
@@ -79,14 +76,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _field('Full Name', _nameController),
               _field('Phone number', _phoneController,
                   type: TextInputType.phone),
-              _field('Gmail', _emailController,
+              _field('E-Mail', _emailController,
                   type: TextInputType.emailAddress),
               _field('Password', _passwordController, obscure: true),
-              _field('Confirm Password', _confirmController,
-                  obscure: true),
+              _field('Confirm Password', _confirmController, obscure: true),
               const SizedBox(height: 8),
               CustomButton(
-                  text: 'login',
+                  text: 'Create Account',
                   onPressed: _register,
                   isLoading: _isLoading),
             ],
