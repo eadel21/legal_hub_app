@@ -7,48 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:835639496992:android:aae722e203189493ef4745",
-        "android_client_info": {
-          "package_name": "com.example.legal_hub"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyD3iX-g40aS8aaCYM4t8T_SQbjhvqq6ZF8"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "835639496992-8jeo4hv2m86d8391nuht128mi8i101hr.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.legalHubApp"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:835639496992:android:3dfe1a461ae942cdef4745",
         "android_client_info": {
           "package_name": "com.example.legal_hub_app"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "835639496992-v3parm76iodop1deijthrir1dgukju3c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.legal_hub_app",
+            "certificate_hash": "25f1e65c430810e6932a897c675abacd89cf0602"
+          }
+        },
         {
           "client_id": "835639496992-bs5eq0d9tuu70v06fceppoff94nk2h19.apps.googleusercontent.com",
           "client_type": 3

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:legal_hub_app/lawyer/apply_as_lawyer_screen.dart';
 import '../../constants/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
@@ -19,7 +20,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _authService = AuthService();
   UserModel? _user;
 
-  // ✅ Dynamic menu items — easy to add more
   late final List<Map<String, dynamic>> _menuItems = [
     {
       'icon': Icons.person_outline,
@@ -30,14 +30,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     },
     {
       'icon': Icons.credit_card,
-      'title': 'insurance detail',
+      'title': 'Insurance Detail',
       'subtitle': 'Add your insurance info',
       'onTap': () {},
     },
     {
       'icon': Icons.account_balance_wallet_outlined,
-      'title': 'Bank card details',
-      'subtitle': 'Change your Bank card details',
+      'title': 'Bank Card Details',
+      'subtitle': 'Change your bank card details',
       'onTap': () {},
     },
     {
@@ -47,9 +47,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'onTap': () {},
     },
     {
+      'icon': Icons.gavel_outlined,
+      'title': 'Apply as a Lawyer',
+      'subtitle': 'Join our legal network',
+      'onTap': () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ApplyAsLawyerScreen())),
+    },
+    {
       'icon': Icons.settings_outlined,
       'title': 'Settings',
-      'subtitle': 'manage & Setting',
+      'subtitle': 'Manage & settings',
       'onTap': () {},
     },
   ];
@@ -75,21 +82,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
+            const Padding(
+              padding: EdgeInsets.all(20),
               child: Row(
                 children: [
-                  const Text('Profile',
-                      style: TextStyle(
-                          fontSize: 26, fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  const Icon(Icons.send_outlined,
-                      color: AppColors.primary),
+                  Text('Profile',
+                      style:
+                          TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                  Spacer(),
+                  Icon(Icons.send_outlined, color: AppColors.primary),
                 ],
               ),
             ),
 
-            // ✅ Dynamic user info card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -101,27 +106,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   children: [
                     const CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.white24,
-                        child: Icon(Icons.person,
-                            color: Colors.white, size: 30)),
+                      radius: 28,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white, size: 30),
+                    ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _user?.fullName.toUpperCase() ?? 'LOADING...',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _user?.fullName.toUpperCase() ?? 'LOADING...',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                          Text(
+                            _user?.email ?? '',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // ✅ Edit Profile button
+                    GestureDetector(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AccountInfoScreen(user: _user),
+                          ),
+                        );
+                        _loadUser(); // refresh after edit
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        Text(
-                          _user?.email ?? '',
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 13),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.edit, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text('Edit',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600)),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -131,11 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 20, 0, 8),
               child: Text('General',
-                  style: TextStyle(
-                      color: AppColors.textGrey, fontSize: 14)),
+                  style: TextStyle(color: AppColors.textGrey, fontSize: 14)),
             ),
 
-            // ✅ Dynamic menu list
             Expanded(
               child: ListView.separated(
                 itemCount: _menuItems.length,
@@ -143,15 +179,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(height: 1, indent: 70),
                 itemBuilder: (context, index) {
                   final item = _menuItems[index];
+                  final isLawyer = item['title'] == 'Apply as a Lawyer';
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: isLawyer
+                          ? AppColors.primary.withValues(alpha: 0.15)
+                          : AppColors.accent,
                       child: Icon(item['icon'] as IconData,
-                          color: Colors.white, size: 20),
+                          color: isLawyer ? AppColors.primary : Colors.white,
+                          size: 20),
                     ),
                     title: Text(item['title'],
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: isLawyer
+                                ? AppColors.primary
+                                : AppColors.textDark)),
                     subtitle: Text(item['subtitle'],
                         style: const TextStyle(
                             color: AppColors.textGrey, fontSize: 12)),
@@ -165,15 +208,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             Padding(
               padding: const EdgeInsets.all(16),
-              child: TextButton(
+              child: TextButton.icon(
                 onPressed: () async {
                   await _authService.signOut();
                   if (!mounted) return;
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()));
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
                 },
-                child: const Text('Sign Out',
-                    style: TextStyle(color: Colors.red)),
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label:
+                    const Text('Sign Out', style: TextStyle(color: Colors.red)),
               ),
             ),
           ],

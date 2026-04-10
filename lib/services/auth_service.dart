@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'firestore_service.dart';
 
 class AuthService {
@@ -26,6 +28,7 @@ class AuthService {
       fullName: fullName,
       email: email,
       phone: phone,
+      photoUrl: '',
     );
     return credential;
   }
@@ -51,26 +54,79 @@ class AuthService {
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
-    final userCredential = await _auth.signInWithCredential(credential);
-    // Save to Firestore if new user
-    if (userCredential.additionalUserInfo?.isNewUser == true) {
+    final result = await _auth.signInWithCredential(credential);
+    if (result.additionalUserInfo?.isNewUser == true) {
       await _firestoreService.createUser(
-        uid: userCredential.user!.uid,
-        fullName: userCredential.user!.displayName ?? '',
-        email: userCredential.user!.email ?? '',
-        phone: userCredential.user!.phoneNumber ?? '',
+        uid: result.user!.uid,
+        fullName: googleUser.displayName ?? '',
+        email: googleUser.email,
+        phone: result.user!.phoneNumber ?? '',
+        photoUrl: googleUser.photoUrl ?? '',
       );
     }
-    return userCredential;
+    return result;
   }
 
-  // ── Forgot Password (sends OTP via phone) ───────────────────────
+  Future<UserCredential?> signInWithFacebook() async {
+    final loginResult = await FacebookAuth.instance.login();
+    if (loginResult.status != LoginStatus.success) return null;
+
+    final userData = await FacebookAuth.instance.getUserData(
+      fields: 'name,email,picture.width(200)',
+    );
+
+    final credential = FacebookAuthProvider.credential(
+      loginResult.accessToken!.tokenString,
+    );
+    final result = await _auth.signInWithCredential(credential);
+
+    if (result.additionalUserInfo?.isNewUser == true) {
+      await _firestoreService.createUser(
+        uid: result.user!.uid,
+        fullName: userData['name'] ?? '',
+        email: userData['email'] ?? '',
+        phone: '',
+        photoUrl: userData['picture']?['data']?['url'] ?? '',
+      );
+    }
+    return result;
+  }
+
+  Future<UserCredential?> signInWithApple() async {
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+    final oauthCredential = OAuthProvider('apple.com').credential(
+      idToken: appleCredential.identityToken,
+      accessToken: appleCredential.authorizationCode,
+    );
+    final result = await _auth.signInWithCredential(oauthCredential);
+
+    if (result.additionalUserInfo?.isNewUser == true) {
+      final name =
+          '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
+              .trim();
+      await _firestoreService.createUser(
+        uid: result.user!.uid,
+        fullName: name,
+        email: appleCredential.email ?? result.user!.email ?? '',
+        phone: '',
+        photoUrl: '',
+      );
+    }
+    return result;
+  }
+
+  // ── Forgot Password — Email Reset ────────────────────────────────
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // ── Phone OTP ────────────────────────────────────────────────────
-  Future<void> verifyPhone({
+  // ── Forgot Password — SMS OTP ────────────────────────────────────
+  Future<void> sendOtpToPhone({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
     required Function(String error) onError,
@@ -86,10 +142,11 @@ class AuthService {
       codeSent: (String verificationId, int? resendToken) {
         onCodeSent(verificationId);
       },
-      codeAutoRetrievalTimeout: (String verificationId) {},
+      codeAutoRetrievalTimeout: (_) {},
     );
   }
 
+  // ── Verify OTP ───────────────────────────────────────────────────
   Future<void> verifyOtp({
     required String verificationId,
     required String otp,

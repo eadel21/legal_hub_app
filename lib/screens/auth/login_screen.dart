@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration:
-                    const InputDecoration(hintText: 'user name'),
+                    const InputDecoration(hintText: 'Email'),
               ),
               const SizedBox(height: 20),
               const Text('password',
@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: _passwordController,
                 obscureText: _obscure,
                 decoration: InputDecoration(
-                  hintText: 'password',
+                  hintText: 'Password',
                   suffixIcon: IconButton(
                     icon: Icon(
                         _obscure ? Icons.visibility_off : Icons.visibility),
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               CustomButton(
-                  text: 'login',
+                  text: 'Login',
                   onPressed: _login,
                   isLoading: _isLoading),
               const SizedBox(height: 12),

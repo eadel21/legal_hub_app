@@ -3,6 +3,7 @@ class UserModel {
   final String fullName;
   final String email;
   final String phone;
+  final String photoUrl;
   final String gender;
   final String nationality;
   final String maritalStatus;
@@ -12,20 +13,22 @@ class UserModel {
     required this.fullName,
     required this.email,
     required this.phone,
-    this.gender = '',
-    this.nationality = '',
-    this.maritalStatus = '',
+    required this.photoUrl,
+    required this.gender,
+    required this.nationality,
+    required this.maritalStatus,
   });
 
-  factory UserModel.fromMap(Map<String, dynamic> map) {
+  factory UserModel.fromMap(Map<String, dynamic> data) {
     return UserModel(
-      uid: map['uid'] ?? '',
-      fullName: map['fullName'] ?? '',
-      email: map['email'] ?? '',
-      phone: map['phone'] ?? '',
-      gender: map['gender'] ?? '',
-      nationality: map['nationality'] ?? '',
-      maritalStatus: map['maritalStatus'] ?? '',
+      uid: data['uid'] ?? '',
+      fullName: data['fullName'] ?? '',
+      email: data['email'] ?? '',
+      phone: data['phone'] ?? '',
+      photoUrl: data['photoUrl'] ?? '',
+      gender: data['gender'] ?? '',
+      nationality: data['nationality'] ?? '',
+      maritalStatus: data['maritalStatus'] ?? '',
     );
   }
 
@@ -35,6 +38,7 @@ class UserModel {
       'fullName': fullName,
       'email': email,
       'phone': phone,
+      'photoUrl': photoUrl,
       'gender': gender,
       'nationality': nationality,
       'maritalStatus': maritalStatus,
