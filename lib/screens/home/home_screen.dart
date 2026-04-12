@@ -13,7 +13,7 @@ import '../legal/crime_screen.dart';
 import '../legal/financial_screen.dart';
 import '../legal/companies_screen.dart';
 import '../legal/real_estate_screen.dart';
-
+import '../chat/chat_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -98,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final cats = await _firestoreService.getCategories();
-      // ✅ Debug: prints exact Firestore names to console
       debugPrint(
           '📦 Categories from Firestore: ${cats.map((c) => c['name']).toList()}');
       if (mounted) {
@@ -118,13 +117,15 @@ class _HomeScreenState extends State<HomeScreen> {
   final _ = context.locale;
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: _currentTab == 0
-            ? _buildHome()
-            : _currentTab == 1
-                ? _buildSearch()
-                : const ProfileScreen(),
-      ),
+body: SafeArea(
+  child: _currentTab == 0
+      ? _buildHome()
+      : _currentTab == 1
+          ? _buildSearch()
+          : _currentTab == 2
+              ? const ChatListScreen()
+              : const ProfileScreen(),
+),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentTab,
         onTap: (i) => setState(() => _currentTab = i),
@@ -142,9 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
               activeIcon: Icon(Icons.search),
               label: 'Find'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile'),
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat_bubble),
+              label: 'Chat'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline), 
+            activeIcon: Icon(Icons.person), 
+            label: 'Profile'),
+
         ],
       ),
     );
@@ -298,9 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.primary))
               : _categories.isEmpty
-                  // ✅ Firestore empty or failed → show static grid
                   ? _buildStaticGrid()
-                  // ✅ Firestore loaded → show dynamic grid
                   : _buildFirestoreGrid(),
           const SizedBox(height: 16),
         ],
