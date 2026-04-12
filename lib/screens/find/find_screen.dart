@@ -48,7 +48,7 @@ class _FindScreenState extends State<FindScreen> {
                 controller: _searchController,
                 onChanged: _search,
                 decoration: InputDecoration(
-                  hintText: 'search_hint'.tr(),
+                  hintText: 'Find a lawyer/Search for Consultion'.tr(),
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   filled: true,
@@ -60,7 +60,7 @@ class _FindScreenState extends State<FindScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _filtered.isEmpty
-                      ? Center(child: Text('no_results'.tr()))
+                      ? Center(child: Text('No results found'.tr()))
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: _filtered.length,

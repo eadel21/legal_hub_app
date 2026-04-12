@@ -3,6 +3,7 @@ import '../../constants/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../home/home_screen.dart';
+import 'phone_auth_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePass = true;
   bool _obscureConfirm = true;
 
+  // ── Email Register ───────────────────────────────────────
   Future<void> _register() async {
     if (_passwordController.text != _confirmController.text) {
       _showError('Passwords do not match');
@@ -45,6 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  // ── Google ───────────────────────────────────────────────
   Future<void> _googleSignIn() async {
     setState(() => _isLoading = true);
     try {
@@ -60,18 +63,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _showError(String msg) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  // ── Facebook ─────────────────────────────────────────────
+  Future<void> _facebookSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithFacebook();
+      if (result == null) return;
+      if (!mounted) return;
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-  Widget _field(String label, TextEditingController ctrl,
-      {bool obscure = false,
-      TextInputType type = TextInputType.text,
-      VoidCallback? onToggle}) {
+  // ── Apple ────────────────────────────────────────────────
+  Future<void> _appleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithApple();
+      if (result == null) return;
+      if (!mounted) return;
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String msg) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(msg)));
+
+  Widget _field(
+    String label,
+    TextEditingController ctrl, {
+    bool obscure = false,
+    TextInputType type = TextInputType.text,
+    VoidCallback? onToggle,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: 15)),
         const SizedBox(height: 8),
         TextField(
           controller: ctrl,
@@ -106,7 +145,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               const SizedBox(height: 32),
               const Text('Create Account',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      fontSize: 26, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               const Text('Fill in your details to get started',
                   style: TextStyle(color: Colors.grey)),
@@ -119,11 +159,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   type: TextInputType.emailAddress),
               _field('Password', _passwordController,
                   obscure: _obscurePass,
-                  onToggle: () => setState(() => _obscurePass = !_obscurePass)),
+                  onToggle: () =>
+                      setState(() => _obscurePass = !_obscurePass)),
               _field('Confirm Password', _confirmController,
                   obscure: _obscureConfirm,
-                  onToggle: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm)),
+                  onToggle: () => setState(
+                      () => _obscureConfirm = !_obscureConfirm)),
 
               const SizedBox(height: 8),
               CustomButton(
@@ -133,7 +174,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 24),
 
-              // Divider
               Row(children: [
                 const Expanded(child: Divider()),
                 Padding(
@@ -146,7 +186,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 20),
 
-              // Google Sign-In Button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
@@ -160,13 +199,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Google "G" icon drawn with colored text
                       Container(
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade300),
+                          border:
+                              Border.all(color: Colors.grey.shade300),
                         ),
                         child: const Center(
                           child: Text('G',
@@ -179,7 +218,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(width: 10),
                       const Text('Continue with Google',
                           style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w500)),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500)),
                     ],
                   ),
                 ),
@@ -187,14 +227,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               const SizedBox(height: 12),
 
-              // Social row — Facebook + Apple
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: _isLoading ? null : _facebookSignIn,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         side: BorderSide(color: Colors.grey.shade300),
@@ -213,9 +253,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: _isLoading ? null : _appleSignIn,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         side: BorderSide(color: Colors.grey.shade300),
@@ -233,9 +274,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
 
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const PhoneAuthScreen()),
+                          ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.phone, color: AppColors.primary),
+                      SizedBox(width: 10),
+                      Text('Sign up with Phone Number',
+                          style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 24),
 
-              // Already have account
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

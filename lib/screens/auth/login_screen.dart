@@ -56,6 +56,37 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _facebookLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithFacebook();
+      if (result != null && mounted) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      }
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+
+  Future<void> _appleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final result = await _authService.signInWithApple();
+      if (result != null && mounted) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+      }
+    } catch (e) {
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -78,11 +109,10 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration:
-                    const InputDecoration(hintText: 'Email'),
+                decoration: const InputDecoration(hintText: 'Email'),
               ),
               const SizedBox(height: 20),
-              const Text('password',
+              const Text('Password',
                   style: TextStyle(
                       fontWeight: FontWeight.w600, fontSize: 16)),
               const SizedBox(height: 8),
@@ -92,8 +122,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   hintText: 'Password',
                   suffixIcon: IconButton(
-                    icon: Icon(
-                        _obscure ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(_obscure
+                        ? Icons.visibility_off
+                        : Icons.visibility),
                     onPressed: () =>
                         setState(() => _obscure = !_obscure),
                   ),
@@ -123,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (_) => const RegisterScreen())),
-                  child: const Text('create new account.',
+                  child: const Text('New user ? Create account.',
                       style: TextStyle(color: AppColors.textDark)),
                 ),
               ),
@@ -136,14 +167,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(child: Divider()),
               ]),
               const SizedBox(height: 12),
-              _socialButton(
-                  'Login with ios', Icons.apple, _googleLogin),
+
+              // ✅ Each button calls its own method
+              _socialButton('Login with iOS', Icons.apple, _appleLogin),
               const SizedBox(height: 10),
-              _socialButton(
-                  'Login with google', Icons.g_mobiledata, _googleLogin),
+              _socialButton('Login with Google', Icons.g_mobiledata, _googleLogin),
               const SizedBox(height: 10),
-              _socialButton('Login with facebook',
-                  Icons.facebook, _googleLogin),
+              _socialButton('Login with Facebook', Icons.facebook, _facebookLogin),
             ],
           ),
         ),
@@ -151,8 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _socialButton(
-      String label, IconData icon, VoidCallback onTap) {
+  Widget _socialButton(String label, IconData icon, VoidCallback onTap) {
     return OutlinedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, color: AppColors.textDark),

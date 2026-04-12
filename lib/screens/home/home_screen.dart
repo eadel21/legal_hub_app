@@ -1,11 +1,19 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../find/find_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../constants/app_colors.dart';
 import '../../services/firestore_service.dart';
 import '../categories/category_detail_screen.dart';
 import '../profile/profile_screen.dart';
+import '../legal/personal_status_screen.dart';
+import '../legal/crime_screen.dart';
+import '../legal/financial_screen.dart';
+import '../legal/companies_screen.dart';
+import '../legal/real_estate_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +45,44 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
+  final List<Map<String, dynamic>> _staticCategories = [
+    {'name': 'Personal Status', 'icon': Icons.person_outline},
+    {'name': 'Crime', 'icon': Icons.gavel},
+    {'name': 'Financial', 'icon': Icons.attach_money},
+    {'name': 'Companies', 'icon': Icons.business},
+    {'name': 'Real Estate', 'icon': Icons.location_city},
+  ];
+
+  Widget _getScreenForCategory(String name, String id) {
+    switch (name.toLowerCase().trim()) {
+      case 'personal status':
+      case 'personal status law':
+      case 'personal_status':
+        return const PersonalStatusScreen();
+      case 'crime':
+      case 'criminal law':
+      case 'criminal':
+        return const CrimeScreen();
+      case 'financial':
+      case 'financial law':
+      case 'finance':
+        return const FinancialScreen();
+      case 'companies':
+      case 'companies law':
+      case 'company':
+      case 'corporate':
+        return const CompaniesScreen();
+      case 'real estate':
+      case 'real estate law':
+      case 'realestate':
+      case 'real_estate':
+        return const RealEstateScreen();
+      default:
+        debugPrint('⚠️ No screen found for category: "$name" — using fallback');
+        return CategoryDetailScreen(categoryName: name, categoryId: id);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -49,17 +95,27 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = await _firestoreService.getUser(uid);
       if (mounted) setState(() => _userName = user?.fullName ?? '');
     }
-    final cats = await _firestoreService.getCategories();
-    if (mounted) {
-      setState(() {
-        _categories = cats;
-        _isLoading = false;
-      });
+
+    try {
+      final cats = await _firestoreService.getCategories();
+      // ✅ Debug: prints exact Firestore names to console
+      debugPrint(
+          '📦 Categories from Firestore: ${cats.map((c) => c['name']).toList()}');
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to load categories: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+  final _ = context.locale;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -118,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Welcome back',
-                      style: TextStyle(
-                          color: AppColors.textGrey, fontSize: 12)),
+                      style:
+                          TextStyle(color: AppColors.textGrey, fontSize: 12)),
                   Text(
                     _userName.isEmpty ? 'User' : _userName,
                     style: const TextStyle(
@@ -142,24 +198,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 20),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.inputFill,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const TextField(
-              decoration: InputDecoration(
-                hintText: 'Search for a lawyer or case type...',
-                hintStyle: TextStyle(color: AppColors.textGrey),
-                icon: Icon(Icons.search, color: AppColors.primary),
-                border: InputBorder.none,
+          GestureDetector(
+            onTap: () => setState(() => _currentTab = 1),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('Search for a lawyer or case type...',
+                      style: TextStyle(color: AppColors.textGrey)),
+                ],
               ),
             ),
           ),
           const SizedBox(height: 20),
-
           CarouselSlider.builder(
             itemCount: _banners.length,
             itemBuilder: (context, index, _) {
@@ -201,10 +258,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Text(
                       _banners[index]['text'],
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -215,12 +271,10 @@ class _HomeScreenState extends State<HomeScreen> {
               viewportFraction: 1,
               autoPlay: true,
               autoPlayInterval: const Duration(seconds: 4),
-              onPageChanged: (i, _) =>
-                  setState(() => _currentBanner = i),
+              onPageChanged: (i, _) => setState(() => _currentBanner = i),
             ),
           ),
           const SizedBox(height: 10),
-
           Center(
             child: AnimatedSmoothIndicator(
               activeIndex: _currentBanner,
@@ -234,39 +288,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 24),
-
           const Text('Legal Categories',
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textDark)),
           const SizedBox(height: 12),
-
           _isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: AppColors.primary))
               : _categories.isEmpty
-                  ? _staticCategoryGrid()
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categories[index];
-                        return _categoryCard(
-                          cat['name'] ?? '',
-                          cat['icon'] ?? 'assets/icons/default.png',
-                          cat['id'] ?? '',
-                        );
-                      },
-                    ),
+                  // ✅ Firestore empty or failed → show static grid
+                  ? _buildStaticGrid()
+                  // ✅ Firestore loaded → show dynamic grid
+                  : _buildFirestoreGrid(),
           const SizedBox(height: 16),
         ],
       ),
@@ -274,44 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearch() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.inputFill,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const TextField(
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Search lawyers, cases...',
-                icon: Icon(Icons.search, color: AppColors.primary),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Icon(Icons.search,
-              size: 80,
-              color: AppColors.primary.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          const Text('Search for a lawyer or legal topic',
-              style: TextStyle(color: AppColors.textGrey)),
-        ],
-      ),
-    );
+    return const FindScreen();
   }
 
-  Widget _staticCategoryGrid() {
-    final items = [
-      {'name': 'Personal Status', 'icon': Icons.person_outline},
-      {'name': 'Crime', 'icon': Icons.gavel},
-      {'name': 'Financial', 'icon': Icons.attach_money},
-      {'name': 'Companies', 'icon': Icons.business},
-    ];
+  Widget _buildStaticGrid() {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -321,49 +322,59 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSpacing: 12,
         childAspectRatio: 1,
       ),
-      itemCount: items.length,
+      itemCount: _staticCategories.length,
       itemBuilder: (context, index) {
+        final name = _staticCategories[index]['name'] as String;
+        final icon = _staticCategories[index]['icon'] as IconData;
         return GestureDetector(
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => CategoryDetailScreen(
-                categoryName: items[index]['name'] as String,
-                categoryId: items[index]['name'] as String,
-              ),
+              builder: (_) => _getScreenForCategory(name, name),
             ),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade200),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                )
-              ],
+          child: _categoryCardWidget(
+            name: name,
+            child: Icon(icon, size: 32, color: AppColors.primary),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFirestoreGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1,
+      ),
+      itemCount: _categories.length,
+      itemBuilder: (context, index) {
+        final cat = _categories[index];
+        final name = cat['name'] ?? '';
+        final id = cat['id'] ?? '';
+        final iconPath = cat['icon'] ?? '';
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _getScreenForCategory(name, id),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(items[index]['icon'] as IconData,
-                      size: 32, color: AppColors.primary),
-                ),
-                const SizedBox(height: 10),
-                Text(items[index]['name'] as String,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textDark)),
-              ],
+          ),
+          child: _categoryCardWidget(
+            name: name,
+            child: Image.asset(
+              iconPath,
+              height: 32,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.category,
+                size: 32,
+                color: AppColors.primary,
+              ),
             ),
           ),
         );
@@ -371,51 +382,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _categoryCard(String name, String iconPath, String id) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              CategoryDetailScreen(categoryName: name, categoryId: id),
-        ),
+  Widget _categoryCardWidget({
+    required String name,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade200),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            )
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Image.asset(iconPath,
-                  height: 32,
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.category,
-                      size: 32,
-                      color: AppColors.primary)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 10),
-            Text(name,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark)),
-          ],
-        ),
+            child: child,
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: AppColors.textDark),
+            ),
+          ),
+        ],
       ),
     );
   }

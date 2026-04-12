@@ -66,7 +66,7 @@ class FirestoreService {
         .orderBy('date', descending: true)
         .get();
     return snapshot.docs
-        .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+        .map((doc) => {'id': doc.id, ...doc.data()})
         .toList();
   }
 
@@ -88,7 +88,7 @@ class FirestoreService {
   Future<List<Map<String, dynamic>>> getInsurancePlans() async {
     final snapshot = await _db.collection('insurance_plans').get();
     return snapshot.docs
-        .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
+        .map((doc) => {'id': doc.id, ...doc.data()})
         .toList();
   }
 
