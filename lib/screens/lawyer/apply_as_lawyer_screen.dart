@@ -22,18 +22,22 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
   final _unionNumberController = TextEditingController();
   final _experienceController = TextEditingController();
   String? _unionCardFileName;
+  String? _unionCardFilePath;
 
   // Step 2
   final _specialtyController = TextEditingController();
   final _cityController = TextEditingController();
   final _bioController = TextEditingController();
   String? _licenseFileName;
+  String? _licenseFilePath;
 
   // Step 3
   final _nationalIdController = TextEditingController();
   final _addressController = TextEditingController();
   String? _nationalIdFileName;
+  String? _nationalIdFilePath;
   String? _photoFileName;
+  String? _photoFilePath;
 
   bool _isSaving = false;
 
@@ -55,17 +59,26 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
     super.dispose();
   }
 
-  Future<void> _pickFile(Function(String) onPicked) async {
-    final result = await FilePicker.platform.pickFiles();
+  Future<void> _pickFile(Function(String name, String path) onPicked) async {
+    final result = await FilePicker.platform.pickFiles(
+      withData: false,
+      withReadStream: false,
+    );
     if (result != null && result.files.isNotEmpty) {
-      onPicked(result.files.first.name);
+      final file = result.files.first;
+      if (file.path != null) {
+        onPicked(file.name, file.path!);
+      }
     }
   }
 
   Future<void> _submit() async {
     setState(() => _isSaving = true);
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) throw Exception('User not logged in');
+
       await _firestoreService.submitLawyerApplication({
         'userId': uid,
         'fullName': _fullNameController.text.trim(),
@@ -77,16 +90,33 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
         'bio': _bioController.text.trim(),
         'nationalId': _nationalIdController.text.trim(),
         'address': _addressController.text.trim(),
+        'unionCardFile': _unionCardFilePath ?? '',
+        'licenseFile': _licenseFilePath ?? '',
+        'nationalIdFile': _nationalIdFilePath ?? '',
+        'photoFile': _photoFilePath ?? '',
+        'status': 'pending',
+        'createdAt': DateTime.now().toIso8601String(),
       });
-    }
-    if (mounted) {
-      setState(() => _isSaving = false);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const RequestStatusScreen(status: 'pending'),
-        ),
-      );
+
+      if (mounted) {
+        setState(() => _isSaving = false);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const RequestStatusScreen(status: 'pending'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Submission failed: \$e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -146,7 +176,7 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
                   child: isDone
                       ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : Text(
-                          '${index + 1}',
+                          '\${index + 1}',
                           style: TextStyle(
                             color: isActive ? Colors.white : AppColors.textGrey,
                             fontWeight: FontWeight.bold,
@@ -219,8 +249,10 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
           const SizedBox(height: 8),
           _buildFileUpload(
             fileName: _unionCardFileName,
-            onTap: () => _pickFile((name) =>
-                setState(() => _unionCardFileName = name)),
+            onTap: () => _pickFile((name, path) => setState(() {
+                  _unionCardFileName = name;
+                  _unionCardFilePath = path;
+                })),
           ),
         ],
       ),
@@ -274,8 +306,10 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
           const SizedBox(height: 8),
           _buildFileUpload(
             fileName: _licenseFileName,
-            onTap: () => _pickFile((name) =>
-                setState(() => _licenseFileName = name)),
+            onTap: () => _pickFile((name, path) => setState(() {
+                  _licenseFileName = name;
+                  _licenseFilePath = path;
+                })),
           ),
         ],
       ),
@@ -313,16 +347,20 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
           const SizedBox(height: 8),
           _buildFileUpload(
             fileName: _nationalIdFileName,
-            onTap: () => _pickFile((name) =>
-                setState(() => _nationalIdFileName = name)),
+            onTap: () => _pickFile((name, path) => setState(() {
+                  _nationalIdFileName = name;
+                  _nationalIdFilePath = path;
+                })),
           ),
           const SizedBox(height: 16),
           _buildLabel('Personal Photo'),
           const SizedBox(height: 8),
           _buildFileUpload(
             fileName: _photoFileName,
-            onTap: () => _pickFile(
-                (name) => setState(() => _photoFileName = name)),
+            onTap: () => _pickFile((name, path) => setState(() {
+                  _photoFileName = name;
+                  _photoFilePath = path;
+                })),
           ),
         ],
       ),
@@ -347,7 +385,9 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
           if (_currentStep > 0)
             Expanded(
               child: OutlinedButton(
-                onPressed: () => setState(() => _currentStep--),
+                onPressed: _isSaving
+                    ? null
+                    : () => setState(() => _currentStep--),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
@@ -388,7 +428,14 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
                 ),
               ),
               child: _isSaving
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
                   : Text(
                       _currentStep < 2 ? 'Next Step' : 'Submit',
                       style: const TextStyle(
@@ -466,7 +513,8 @@ class _ApplyAsLawyerScreenState extends State<ApplyAsLawyerScreen> {
               fileName != null
                   ? Icons.check_circle
                   : Icons.upload_file_outlined,
-              color: fileName != null ? AppColors.primary : AppColors.textGrey,
+              color:
+                  fileName != null ? AppColors.primary : AppColors.textGrey,
             ),
             const SizedBox(width: 12),
             Expanded(

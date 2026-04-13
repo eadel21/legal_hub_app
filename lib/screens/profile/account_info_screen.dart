@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
@@ -13,6 +16,7 @@ class AccountInfoScreen extends StatefulWidget {
 
 class _AccountInfoScreenState extends State<AccountInfoScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final ImagePicker _picker = ImagePicker();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -23,6 +27,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingPhoto = false;
 
   String _photoUrl = '';
 
@@ -54,6 +59,109 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     }
   }
 
+  Future<void> _pickAndUploadPhoto() async {
+    // Show bottom sheet to choose source
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Change Profile Photo',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.primary,
+                  child: Icon(Icons.photo_library, color: Colors.white),
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.primary,
+                  child: Icon(Icons.camera_alt, color: Colors.white),
+                ),
+                title: const Text('Take a Photo'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+
+      if (image == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_pictures/$uid.jpg');
+
+      final TaskSnapshot snapshot = await ref.putFile(File(image.path));
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Save URL to Firestore
+      await _firestoreService.updateUser(uid, {'photoUrl': downloadUrl});
+
+      if (mounted) {
+        setState(() {
+          _photoUrl = downloadUrl;
+          _isUploadingPhoto = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile photo updated!'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _saveUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -78,12 +186,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
 
     if (mounted) setState(() => _isSaving = false);
@@ -136,22 +246,45 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   }
 
   Widget _buildProfileImage() {
-    return Container(
-      width: 110,
-      height: 140,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(60),
-        image: _photoUrl.isNotEmpty
-            ? DecorationImage(
-                image: NetworkImage(_photoUrl),
-                fit: BoxFit.cover,
-              )
-            : null,
+    return GestureDetector(
+      onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              shape: BoxShape.circle,
+              image: _photoUrl.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(_photoUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: _isUploadingPhoto
+                ? const CircularProgressIndicator(color: AppColors.primary)
+                : _photoUrl.isEmpty
+                    ? const Icon(Icons.person, size: 60, color: Colors.white)
+                    : null,
+          ),
+          // Camera icon badge
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.camera_alt,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+        ],
       ),
-      child: _photoUrl.isEmpty
-          ? const Icon(Icons.person, size: 60, color: Colors.white)
-          : null,
     );
   }
 
@@ -177,13 +310,21 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
               child: CircularProgressIndicator(color: AppColors.primary),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 children: [
                   const SizedBox(height: 10),
                   Center(child: _buildProfileImage()),
-                  const SizedBox(height: 35),
-
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tap photo to change',
+                    style: TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
                   _buildInfoField(
                     icon: Icons.person,
                     controller: _nameController,
@@ -215,9 +356,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     controller: _maritalStatusController,
                     hint: 'Marital Status',
                   ),
-
                   const SizedBox(height: 30),
-
                   SizedBox(
                     width: 230,
                     height: 44,

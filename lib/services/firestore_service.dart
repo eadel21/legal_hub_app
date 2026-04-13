@@ -77,13 +77,18 @@ class FirestoreService {
     });
   }
 
-  Future<void> submitLawyerApplication(Map<String, dynamic> data) async {
-    await _db.collection('lawyer_applications').add({
-      ...data,
-      'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-  }
+Future<void> submitLawyerApplication(Map<String, dynamic> data) async {
+  await _db.collection('lawyer_applications').add({
+    ...data,
+    'status': 'pending',
+    'createdAt': FieldValue.serverTimestamp(),
+  }).timeout(
+    const Duration(seconds: 15),
+    onTimeout: () => throw Exception(
+      'Connection timed out. Check your internet or Firestore rules.',
+    ),
+  );
+}
 
   Future<List<Map<String, dynamic>>> getInsurancePlans() async {
     final snapshot = await _db.collection('insurance_plans').get();
