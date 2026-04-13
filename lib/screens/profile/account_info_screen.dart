@@ -1,96 +1,258 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../models/user_model.dart';
+import '../../constants/app_colors.dart';
 import '../../services/firestore_service.dart';
-import '../../widgets/custom_button.dart';
+import '../../models/user_model.dart';
 
 class AccountInfoScreen extends StatefulWidget {
-  final UserModel? user;
-  const AccountInfoScreen({super.key, this.user});
+  const AccountInfoScreen({super.key, UserModel? user});
 
   @override
   State<AccountInfoScreen> createState() => _AccountInfoScreenState();
 }
 
 class _AccountInfoScreenState extends State<AccountInfoScreen> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _maritalCtrl;
-  late final TextEditingController _genderCtrl;
-  late final TextEditingController _nationalityCtrl;
-  late final TextEditingController _emailCtrl;
-  final _firestoreService = FirestoreService();
-  bool _isLoading = false;
+  final FirestoreService _firestoreService = FirestoreService();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
+  final TextEditingController _maritalStatusController = TextEditingController();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  String _photoUrl = '';
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.user?.fullName ?? '');
-    _maritalCtrl =
-        TextEditingController(text: widget.user?.maritalStatus ?? '');
-    _genderCtrl = TextEditingController(text: widget.user?.gender ?? '');
-    _nationalityCtrl =
-        TextEditingController(text: widget.user?.nationality ?? '');
-    _emailCtrl = TextEditingController(text: widget.user?.email ?? '');
+    _loadUserData();
   }
 
-  Future<void> _submit() async {
-    setState(() => _isLoading = true);
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    await _firestoreService.updateUser(uid, {
-      'fullName': _nameCtrl.text.trim(),
-      'maritalStatus': _maritalCtrl.text.trim(),
-      'gender': _genderCtrl.text.trim(),
-      'nationality': _nationalityCtrl.text.trim(),
-    });
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')));
-    Navigator.pop(context);
+  Future<void> _loadUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final UserModel? user = await _firestoreService.getUser(uid);
+
+    if (user != null && mounted) {
+      setState(() {
+        _nameController.text = user.fullName;
+        _emailController.text = user.email;
+        _phoneController.text = user.phone;
+        _genderController.text = user.gender;
+        _nationalityController.text = user.nationality;
+        _maritalStatusController.text = user.maritalStatus;
+        _photoUrl = user.photoUrl;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
   }
 
-  Widget _field(String label, TextEditingController ctrl,
-      {String hint = ''}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 15)),
-        const SizedBox(height: 8),
-        TextField(
-            controller: ctrl,
-            decoration: InputDecoration(hintText: hint.isEmpty ? label : hint)),
-        const SizedBox(height: 20),
-      ],
+  Future<void> _saveUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      await _firestoreService.updateUser(uid, {
+        'fullName': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'gender': _genderController.text.trim(),
+        'nationality': _nationalityController.text.trim(),
+        'maritalStatus': _maritalStatusController.text.trim(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account information updated successfully'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    if (mounted) setState(() => _isSaving = false);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _genderController.dispose();
+    _nationalityController.dispose();
+    _maritalStatusController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildInfoField({
+    required IconData icon,
+    required TextEditingController controller,
+    required String hint,
+    bool enabled = true,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: TextField(
+        controller: controller,
+        enabled: enabled,
+        style: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.grey.shade300),
+          hintText: hint,
+          hintStyle: const TextStyle(
+            color: Colors.black54,
+            fontWeight: FontWeight.w500,
+          ),
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileImage() {
+    return Container(
+      width: 110,
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(60),
+        image: _photoUrl.isNotEmpty
+            ? DecorationImage(
+                image: NetworkImage(_photoUrl),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      child: _photoUrl.isEmpty
+          ? const Icon(Icons.person, size: 60, color: Colors.white)
+          : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Account Information')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            _field('full name :', _nameCtrl, hint: 'enter the name'),
-            _field(
-                'Marital Status (Single / Married / Divorced / Widowed)',
-                _maritalCtrl,
-                hint: 'enter the marital status'),
-            _field('Gender:', _genderCtrl, hint: 'Male Or Female'),
-            _field('Nationality:', _nationalityCtrl,
-                hint: 'enter the nationality!'),
-            _field('Email Address:', _emailCtrl,
-                hint: 'enter the email'),
-            CustomButton(
-                text: 'Submit',
-                onPressed: _submit,
-                isLoading: _isLoading),
-          ],
+      backgroundColor: const Color(0xFFF2F2F2),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF2F2F2),
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
+        title: const Text(
+          'Account Information',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  Center(child: _buildProfileImage()),
+                  const SizedBox(height: 35),
+
+                  _buildInfoField(
+                    icon: Icons.person,
+                    controller: _nameController,
+                    hint: 'Full Name',
+                  ),
+                  _buildInfoField(
+                    icon: Icons.email,
+                    controller: _emailController,
+                    hint: 'Email Address',
+                    enabled: false,
+                  ),
+                  _buildInfoField(
+                    icon: Icons.phone,
+                    controller: _phoneController,
+                    hint: 'Phone Number',
+                  ),
+                  _buildInfoField(
+                    icon: Icons.person_outline,
+                    controller: _genderController,
+                    hint: 'Gender',
+                  ),
+                  _buildInfoField(
+                    icon: Icons.flag,
+                    controller: _nationalityController,
+                    hint: 'Nationality',
+                  ),
+                  _buildInfoField(
+                    icon: Icons.favorite_border,
+                    controller: _maritalStatusController,
+                    hint: 'Marital Status',
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  SizedBox(
+                    width: 230,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveUserData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'EDIT YOUR ACCOUNT INFORMATION',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
